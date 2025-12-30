@@ -8,7 +8,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error
 
-# Inisialisasi DagsHub Tracking
+# Inisialisasi DagsHub untuk MLflow Tracking
 if os.getenv('MLFLOW_TRACKING_USERNAME'):
     import dagshub
     dagshub.init(
@@ -18,15 +18,16 @@ if os.getenv('MLFLOW_TRACKING_USERNAME'):
     )
 
 def train_model():
-    # Load Dataset
+    # 1. Load Dataset
+    # Pastikan file CSV ini ada di dalam folder 'MLProject (folder)'
     df = pd.read_csv('OnlineRetail_preprocessing.csv')
     
-    # SOLUSI ERROR STRING: Hanya ambil kolom angka
-    # Ini akan membuang kode produk teks seperti '15056BL'
+    # 2. Pembersihan Data 
+    # Hanya mengambil kolom numerik (angka)
     df_numeric = df.select_dtypes(include=[np.number])
     
     if 'TotalPrice' not in df_numeric.columns:
-        print("Error: Target TotalPrice tidak ditemukan dalam data numerik!")
+        print("Error: Kolom target 'TotalPrice' tidak ditemukan!")
         return
 
     X = df_numeric.drop('TotalPrice', axis=1)
@@ -34,20 +35,27 @@ def train_model():
     
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
+    # 3. MLflow Training
     with mlflow.start_run():
         model = RandomForestRegressor(n_estimators=100, max_depth=5, random_state=42)
         model.fit(X_train, y_train)
         
+        # Prediksi & Metrik
         predictions = model.predict(X_test)
         rmse = np.sqrt(mean_squared_error(y_test, predictions))
         
+        # Log ke DagsHub
+        mlflow.log_param("n_estimators", 100)
+        mlflow.log_param("max_depth", 5)
         mlflow.log_metric("rmse", rmse)
         
+        # 4. Simpan Model
         mlflow.sklearn.log_model(model, "model")
         
+        # Simpan manual untuk artifact GitHub jika diperlukan
         joblib.dump(model, "model_manual.pkl")
         
-        print(f"Training selesai. RMSE: {rmse}")
+        print(f"Training Berhasil! RMSE: {rmse}")
 
 if __name__ == "__main__":
     train_model()
