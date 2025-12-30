@@ -19,7 +19,6 @@ jobs:
 
     - name: Install Dependencies
       run: |
-        python -m pip install --upgrade pip
         pip install mlflow dagshub scikit-learn pandas joblib
 
     - name: Run Model Training
@@ -29,15 +28,6 @@ jobs:
       run: |
         cd "MLProject (folder)"
         python modelling.py
-        # Cek apakah folder 'model' benar-benar ada setelah training
-        echo "Checking model directory..."
-        ls -d model/ && ls model/
-
-    - name: Upload Artifact to GitHub
-      uses: actions/upload-artifact@v4
-      with:
-        name: trained-model-file
-        path: "MLProject (folder)/*.pkl"
 
     - name: Login to Docker Hub
       uses: docker/login-action@v3
@@ -47,8 +37,11 @@ jobs:
 
     - name: Build and Push Docker Image
       run: |
-        # Menggunakan absolute path ($GITHUB_WORKSPACE) untuk keamanan
-        MODEL_PATH="$GITHUB_WORKSPACE/MLProject (folder)/model"
+        cd "MLProject (folder)"
+        # LOGIKA FINAL: Mencari folder model di dalam mlruns secara otomatis
+        MODEL_PATH=$(find mlruns -name "model" -type d | head -n 1)
+        
+        echo "Folder model ditemukan di: $MODEL_PATH"
         
         mlflow models build-docker \
           -m "$MODEL_PATH" \
