@@ -49,7 +49,7 @@ jobs:
         # KUNCI PERBAIKAN: Path harus lengkap ke folder 'model' hasil mlflow
         mlflow models build-docker \
           -m "MLProject (folder)/model" \
-          -n "${{ secrets.DOCKERHUB_USERNAME }}/zeny-arsys-fortila:latest" \
+          -n "${{ secrets.DOCKERHUB_USERNAME }}/zeny-arsya-fortilla-m251d5x2016:latest" \
           --install-mlflow
           
-        docker push ${{ secrets.DOCKERHUB_USERNAME }}/zeny-arsys-fortila:latest
+        docker push ${{ secrets.DOCKERHUB_USERNAME }}/zeny-arsya-fortilla-m251d5x2016:latest
