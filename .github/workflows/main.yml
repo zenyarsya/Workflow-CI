@@ -27,9 +27,8 @@ jobs:
         MLFLOW_TRACKING_USERNAME: ${{ secrets.DAGSHUB_USERNAME }}
         MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
       run: |
-        # Masuk ke folder project Anda
+        # Masuk ke folder dengan tanda kutip karena ada spasi dan kurung
         cd "MLProject (folder)"
-        # Menjalankan training (ini akan menghasilkan folder 'model' di dalam sini)
         python modelling.py
 
     - name: Upload Artifact to GitHub
@@ -46,7 +45,7 @@ jobs:
 
     - name: Build and Push Docker Image
       run: |
-        # KUNCI PERBAIKAN: Path harus lengkap ke folder 'model' hasil mlflow
+        # Menunjuk ke folder 'model' yang baru dibuat oleh script modelling.py
         mlflow models build-docker \
           -m "MLProject (folder)/model" \
           -n "${{ secrets.DOCKERHUB_USERNAME }}/zeny-arsya-fortilla-m251d5x2016:latest" \
