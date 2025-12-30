@@ -8,6 +8,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error
 
+# Inisialisasi DagsHub Tracking
 if os.getenv('MLFLOW_TRACKING_USERNAME'):
     import dagshub
     dagshub.init(
@@ -20,10 +21,12 @@ def train_model():
     # Load Dataset
     df = pd.read_csv('OnlineRetail_preprocessing.csv')
     
+    # SOLUSI ERROR STRING: Hanya ambil kolom angka
+    # Ini akan membuang kode produk teks seperti '15056BL'
     df_numeric = df.select_dtypes(include=[np.number])
     
     if 'TotalPrice' not in df_numeric.columns:
-        print("Error: Kolom target TotalPrice tidak ditemukan dalam data numerik!")
+        print("Error: Target TotalPrice tidak ditemukan dalam data numerik!")
         return
 
     X = df_numeric.drop('TotalPrice', axis=1)
@@ -40,13 +43,11 @@ def train_model():
         
         mlflow.log_metric("rmse", rmse)
         
-        # PENTING: Membuat folder 'model' untuk Docker
         mlflow.sklearn.log_model(model, "model")
         
-        # Simpan file pkl untuk artifact
         joblib.dump(model, "model_manual.pkl")
         
-        print(f"Training Sukses! RMSE: {rmse}")
+        print(f"Training selesai. RMSE: {rmse}")
 
 if __name__ == "__main__":
     train_model()
