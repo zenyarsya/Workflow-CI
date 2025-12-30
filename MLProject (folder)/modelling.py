@@ -10,7 +10,7 @@ if __name__ == "__main__":
     parser.add_argument("--max_depth", type=int, default=3)
     args = parser.parse_args()
 
-    df = pd.read_csv('dataset_preprocessing.csv')
+    df = pd.read_csv('OnlineRetail_preprocessing.csv')
     X = df.select_dtypes(include=['number']).dropna().iloc[:, :-1].head(5000)
     y = df.select_dtypes(include=['number']).dropna().iloc[:, -1].head(5000)
 
