@@ -27,7 +27,7 @@ jobs:
         MLFLOW_TRACKING_USERNAME: ${{ secrets.DAGSHUB_USERNAME }}
         MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
       run: |
-        # Gunakan tanda kutip dua agar folder dengan spasi terbaca
+        # Masuk ke folder dengan tanda kutip karena ada spasi dan kurung
         cd "MLProject (folder)"
         python modelling.py
 
@@ -45,10 +45,10 @@ jobs:
 
     - name: Build and Push Docker Image
       run: |
-        # Membangun image dari folder yang mengandung spasi
+        # Menggunakan nama repo: zeny-arsys-fortila
         mlflow models build-docker \
-          -m "MLProject (folder)" \
-          -n "${{ secrets.DOCKERHUB_USERNAME }}/retail-model:latest" \
+          -m "MLProject (folder)/model" \
+          -n "${{ secrets.DOCKERHUB_USERNAME }}/zeny-arsya-fortilla-m251d5x2016:latest" \
           --install-mlflow
           
-        docker push ${{ secrets.DOCKERHUB_USERNAME }}/retail-model:latest
+        docker push ${{ secrets.DOCKERHUB_USERNAME }}/zeny-arsya-fortilla-m251d5x2016:latest
