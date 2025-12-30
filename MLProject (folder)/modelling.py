@@ -27,7 +27,7 @@ mlflow.sklearn.autolog(log_models=True)
 def train_model():
     # Load dataset (Pastikan file CSV ada di folder yang sama)
     try:
-        df = pd.read_csv('OnlineRetail_preprocessed.csv')
+        df = pd.read_csv('OnlineRetail_preprocessing.csv')
     except FileNotFoundError:
         df = pd.read_csv('MLProject (folder)/OnlineRetail_preprocessing.csv')
     
