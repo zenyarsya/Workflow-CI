@@ -1,0 +1,59 @@
+name: Machine Learning CI - Advance
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  train-and-push-docker:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install mlflow dagshub scikit-learn pandas joblib
+
+    - name: Run Model Training
+      env:
+        MLFLOW_TRACKING_USERNAME: ${{ secrets.DAGSHUB_USERNAME }}
+        MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
+      run: |
+        # Berpindah ke folder MLProject dan menjalankan training
+        cd MLProject
+        python modelling.py
+
+    - name: Upload Artifact to GitHub
+      uses: actions/upload-artifact@v3
+      with:
+        name: trained-model-file
+        path: MLProject/model_manual.pkl
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Build Docker Image using MLflow
+      run: |
+        # Membangun image dari folder MLProject yang berisi file MLProject dan conda.yaml
+        # Ganti 'retail-model' dengan nama repo di Docker Hub kamu
+        mlflow models build-docker \
+          -m "MLProject" \
+          -n "${{ secrets.DOCKERHUB_USERNAME }}/retail-model:latest" \
+          --install-mlflow
+
+    - name: Push Docker Image to Docker Hub
+      run: |
+        docker push ${{ secrets.DOCKERHUB_USERNAME }}/retail-model:latest
