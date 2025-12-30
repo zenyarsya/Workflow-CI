@@ -21,7 +21,7 @@ if os.getenv('MLFLOW_TRACKING_USERNAME'):
 def train_model():
     # Load Dataset
     # Pastikan file OnlineRetail_preprocessed.csv ada di folder 'MLProject (folder)'
-    df = pd.read_csv('OnlineRetail_preprocessed.csv')
+    df = pd.read_csv('OnlineRetail_preprocessing.csv')
     
     X = df.drop('TotalPrice', axis=1)
     y = df['TotalPrice']
