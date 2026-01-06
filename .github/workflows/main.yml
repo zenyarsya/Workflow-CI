@@ -19,20 +19,20 @@ jobs:
 
     - name: Install Dependencies
       run: |
-        pip install mlflow dagshub scikit-learn pandas joblib
+        pip install mlflow==2.7.1 dagshub scikit-learn pandas joblib
+        # Tambahkan library tambahan agar tidak bentrok dengan DagsHub API
+        pip install "requests<2.29.0" "urllib3<2.0.0"
 
-    - name: Run Model Training
+    - name: Run Model Training (MLflow Project)
       env:
         MLFLOW_TRACKING_USERNAME: ${{ secrets.DAGSHUB_USERNAME }}
         MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
+        MLFLOW_TRACKING_URI: https://dagshub.com/zenyfor28/Eksperimen_SML_Zeny-Arsya-Fortilla.mlflow/
       run: |
-        cd "MLProject (folder)"
-        mlflow run . 
-          --env-manager local 
-          -P train_data=X_train.csv 
-          -P test_data=X_test.csv 
-          -P target_column=target 
-          -e main
+        cd MLProject (folder)
+        # Bersihkan cache lama agar tidak "Run not found"
+        rm -rf mlruns
+        mlflow run . --env-manager local --experiment-name "Retail_Final_Project"
 
     - name: Upload Model Artifact
       uses: actions/upload-artifact@v4
@@ -40,7 +40,7 @@ jobs:
         name: model-hasil-training
         path: |
           MLProject (folder)/mlruns
-          MLProject (folder)/model_manual.pkl
+          MLProject (folder)/model.pkl
         retention-days: 1
 
     - name: Login to Docker Hub
@@ -52,14 +52,21 @@ jobs:
     - name: Build and Push Docker Image
       run: |
         cd "MLProject (folder)"
-        # LOGIKA FINAL: Mencari folder model di dalam mlruns secara otomatis
-        MODEL_PATH=$(find mlruns -name "model" -type d | head -n 1)
         
-        echo "Folder model ditemukan di: $MODEL_PATH"
+        # Cari file model.pkl yang dihasilkan oleh modelling.py
+        MODEL_FILE=$(find . -name "model.pkl" | head -n 1)
+        cp "$MODEL_FILE" ./model.pkl
         
-        mlflow models build-docker \
-          -m "$MODEL_PATH" \
-          -n "${{ secrets.DOCKERHUB_USERNAME }}/zeny-arsya-fortilla-m251d5x2016:latest" \
-          --install-mlflow
-          
+        # Buat Dockerfile otomatis
+        cat <<EOF > Dockerfile
+        FROM python:3.10-slim
+        WORKDIR /app
+        COPY model.pkl /app/model.pkl
+        RUN pip install scikit-learn pandas joblib
+        CMD ["python", "-c", "import joblib; model = joblib.load('model.pkl'); print('Model Retail Zeny Loaded Successfully!')"]
+        EOF
+        
+        # Build dan Push
+        docker build -t zeny-retail-model .
+        docker tag zeny-retail-model ${{ secrets.DOCKERHUB_USERNAME }}/zeny-arsya-fortilla-m251d5x2016:latest
         docker push ${{ secrets.DOCKERHUB_USERNAME }}/zeny-arsya-fortilla-m251d5x2016:latest
