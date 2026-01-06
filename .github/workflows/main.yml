@@ -27,11 +27,11 @@ jobs:
         MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
       run: |
         cd "MLProject (folder)"
-        mlflow run . \
-          --env-manager local \
-          -P train_data=X_train.csv \
-          -P test_data=X_test.csv \
-          -P target_column=target \
+        mlflow run . 
+          --env-manager local 
+          -P train_data=X_train.csv 
+          -P test_data=X_test.csv 
+          -P target_column=target 
           -e main
 
     - name: Upload Model Artifact
