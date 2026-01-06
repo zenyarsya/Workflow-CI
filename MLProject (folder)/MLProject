@@ -1,10 +1,5 @@
-name: Retail_OpsML_CI
-
-conda_env: conda.yaml
+name: Retail_Project_Zeny
 
 entry_points:
   main:
-    parameters:
-      n_estimators: {type: int, default: 5}
-      max_depth: {type: int, default: 3}
-    command: "python modelling.py --n_estimators {n_estimators} --max_depth {max_depth}"
+    command: "python modelling.py"
