@@ -52,11 +52,13 @@ jobs:
       run: |
         cd "MLProject (folder)"
         
-        # Cari file model.pkl yang dihasilkan oleh modelling.py
-        MODEL_FILE=$(find . -name "model.pkl" | head -n 1)
+        MODEL_FILE=$(find mlruns -name "model.pkl" | head -n 1)
+        echo "Model file ditemukan di: $MODEL_FILE"
+        
+        # Salin file dari mlruns ke root folder MLProject (folder) untuk Docker
         cp "$MODEL_FILE" ./model.pkl
         
-        # Buat Dockerfile otomatis
+        # Buat Dockerfile
         cat <<EOF > Dockerfile
         FROM python:3.10-slim
         WORKDIR /app
@@ -68,4 +70,18 @@ jobs:
         # Build dan Push
         docker build -t zeny-retail-model .
         docker tag zeny-retail-model ${{ secrets.DOCKERHUB_USERNAME }}/zeny-arsya-fortilla-m251d5x2016:latest
+        docker push ${{ secrets.DOCKERHUB_USERNAME }}/zeny-arsya-fortilla-m251d5x2016:latest
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+       
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Push to Docker Hub
+      run: |
+        docker tag zeny-retail-model ${{ secrets.DOCKERHUB_USERNAME }}/zeny-arsya-fortilla-m251d5x2016:latest
+        
+        # Push ke Docker Hub
         docker push ${{ secrets.DOCKERHUB_USERNAME }}/zeny-arsya-fortilla-m251d5x2016:latest
