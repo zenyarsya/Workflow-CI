@@ -1,51 +1,50 @@
+import os
 import pandas as pd
-import numpy as np
 import mlflow
 import mlflow.sklearn
-import os
 import joblib
+import json
+from sklearn.ensemble import RandomForestRegressor # Pakai Regressor untuk TotalPrice
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_squared_error
 
-# --- KONFIGURASI DAGSHUB ---
-# Diambil dari GitHub Secrets agar aman
-USER_NAME = "zenyfor28" 
-REPO_NAME = "Eksperimen_SML_Zeny-Arsya-Fortilla" 
-TOKEN = os.getenv('MLFLOW_TRACKING_PASSWORD') 
+# Gunakan path relatif agar aman di GitHub Runner
+csv_path = 'OnlineRetail_preprocessing.csv' 
+if not os.path.exists(csv_path):
+    # Jika tidak ada di root, cari di folder MLProject
+    csv_path = 'MLProject (folder)/OnlineRetail_preprocessing.csv'
 
-# Set environment variables sebelum tracking dimulai
-os.environ["MLFLOW_TRACKING_USERNAME"] = USER_NAME
-os.environ["MLFLOW_TRACKING_PASSWORD"] = TOKEN
+# Load Data
+df = pd.read_csv(csv_path)
+# Pilih hanya kolom numerik seperti kode awalmu
+df_numeric = df.select_dtypes(include=['number'])
+X = df_numeric.drop('TotalPrice', axis=1)
+y = df_numeric['TotalPrice']
 
-# Hubungkan ke MLflow DagsHub
-mlflow.set_tracking_uri(f"https://dagshub.com/{USER_NAME}/{REPO_NAME}.mlflow")
-mlflow.set_experiment("Retail_Final_Project")
+# Split Data 
+X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Mengaktifkan autolog agar folder 'model' otomatis dibuat
-mlflow.sklearn.autolog(log_models=True)
+# Training
+model = RandomForestRegressor(n_estimators=100, max_depth=5, random_state=42)
+model.fit(X_train, y_train)
 
-def train_model():
-    # Load dataset (Pastikan file CSV ada di folder yang sama)
-    try:
-        df = pd.read_csv('OnlineRetail_preprocessing.csv')
-    except FileNotFoundError:
-        df = pd.read_csv('MLProject (folder)/OnlineRetail_preprocessing.csv')
-    
-    # Filter hanya kolom angka untuk menghindari ValueError
-    df_numeric = df.select_dtypes(include=[np.number])
-    
-    X = df_numeric.drop("TotalPrice", axis=1)
-    y = df_numeric["TotalPrice"]
-    
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+y_pred = model.predict(X_val)
+mse = mean_squared_error(y_val, y_pred)
 
-    with mlflow.start_run(run_name="Docker_Build_Run"):
-        model = RandomForestRegressor(n_estimators=100, max_depth=5, random_state=42)
-        model.fit(X_train, y_train)
-        
-        # Simpan pkl manual sebagai cadangan artefak
-        joblib.dump(model, "model_manual.pkl")
-        print("Training Berhasil! Folder 'model' telah dibuat otomatis.")
+# Logging (Tanpa start_run karena dijalankan lewat 'mlflow run')
+mlflow.log_param("n_estimators", 100)
+mlflow.log_param("max_depth", 5)
+mlflow.log_metric("mse", mse)
 
-if __name__ == "__main__":
-    train_model()
+# Simpan Model sebagai Artefak MLflow
+mlflow.sklearn.log_model(
+    sk_model=model,
+    artifact_path="model",
+    registered_model_name="Retail_RF_Model" 
+)
+
+# Simpan pkl manual (untuk build Docker nantinya)
+joblib.dump(model, "model.pkl")
+mlflow.log_artifact("model.pkl")
+
+print("Training Selesai dan Log berhasil dikirim ke DagsHub!")
