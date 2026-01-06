@@ -27,8 +27,8 @@ jobs:
         MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
       run: |
         cd "MLProject (folder)"
-        # Gunakan mlflow run, bukan python modelling.py
         mlflow run . \
+          --env-manager local \
           -P train_data=X_train.csv \
           -P test_data=X_test.csv \
           -P target_column=target \
