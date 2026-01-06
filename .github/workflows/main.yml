@@ -27,7 +27,12 @@ jobs:
         MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
       run: |
         cd "MLProject (folder)"
-        python modelling.py
+        # Gunakan mlflow run, bukan python modelling.py
+        mlflow run . \
+          -P train_data=X_train.csv \
+          -P test_data=X_test.csv \
+          -P target_column=target \
+          -e main
 
     - name: Upload Model Artifact
       uses: actions/upload-artifact@v4
